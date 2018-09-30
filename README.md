@@ -25,6 +25,11 @@ cd alpine-php
 docker build -t alpine-php .
 ```
 
+## Debug
+```bash
+docker run --rm -it alpine-php bash
+```
+
 ## Run
 ```bash
 # --init runs a super light weight init inside the container that forwards signals and reaps
