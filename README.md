@@ -4,6 +4,29 @@ Docker container for a php deployment
 ## Overview
 Built off of Alpine Linux which is the defacto standard for production containers.
 
+### Build
+```bash
+git clone https://github.com/phR0ze/alpine-php
+cd alpine-php
+docker build -t alpine-php .
+```
+
+### Debug
+```bash
+docker run --rm -p 80:80 alpine-php
+```
+
+### Run
+```bash
+# --init runs a super light weight init inside the container that forwards signals and reaps
+# processes which protects you from zombies eating up all resources
+docker run -d --name apache -p 80:80 -v /path/to/content:/www alpine-php
+```
+
+## Packages
+* apache2
+* apache2-utils - ***Provides mpm_prefork***
+
 ## Configuration
 * httpd.conf
 
@@ -56,23 +79,4 @@ LoadModule mpm_prefork_module modules/mod_mpm_prefork.so
     # Defaults to 0
     MaxConnectionsPerChild 0
 </IfModule>
-```
-
-## Build
-```bash
-git clone https://github.com/phR0ze/alpine-php
-cd alpine-php
-docker build -t alpine-php .
-```
-
-## Debug
-```bash
-docker run --rm -it alpine-php bash
-```
-
-## Run
-```bash
-# --init runs a super light weight init inside the container that forwards signals and reaps
-# processes which protects you from zombies eating up all resources
-docker run --init
 ```
