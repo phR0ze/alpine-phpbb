@@ -2,6 +2,7 @@ FROM phr0ze/alpine-base:3.8
 
 # Environment variables
 ENV SERVER_NAME=localhost
+ENV TIME_ZONE=America/Denver
 
 # Installation/Customization
 RUN echo ">> Install httpd/php" && \
@@ -44,18 +45,16 @@ RUN echo ">> Install httpd/php" && \
   \
   echo ">> Configuring /etc/php/php.ini" && \
     sed -i 's|^\(upload_max_filesize\).*|\1 = 200M|g' /etc/php7/php.ini && \
+    sed -i 's|^\(expose_php\).*|\1 = Off|g' /etc/php7/php.ini && \
     sed -i 's|^\(max_execution_time\).*|\1 = 6000|g' /etc/php7/php.ini && \
     sed -i 's|^\(max_input_time\).*|\1 = 6000|g' /etc/php7/php.ini && \
     sed -i 's|^\(post_max_size\).*|\1 = 210M|g' /etc/php7/php.ini
-
-#MODULES=$(grep -n 'LoadModule mpm_prefork' /etc/apache2/httpd.conf | sed 's|^\([0-9]*\):.*|\1|') && \
-#sed -i "${MODULES}iLoadModule php7_module modules/mod_php7.so" /etc/apache2/httpd.conf && \
 
 # Config
 COPY start /usr/bin/
 COPY config/index.php /www/html/
 
 # Run
-EXPOSE 80 443
+EXPOSE 80
 WORKDIR /www
 CMD ["start"]

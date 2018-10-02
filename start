@@ -3,5 +3,6 @@ set -e
 
 # Runtime configuration
 echo "ServerName $SERVER_NAME" > /etc/apache2/conf.d/httpd.conf
+echo "data.timezone = $TIME_ZONE" > /etc/php7/conf.d/10_php.ini
 
 exec httpd -D FOREGROUND

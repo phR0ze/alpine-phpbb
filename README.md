@@ -107,6 +107,7 @@ LoadModule mpm_prefork_module modules/mod_mpm_prefork.so
 ```
 
 ### /etc/php7/php.ini
-Turns out that PHP7 automatically loads any extensions that are installed so there is no need to enable them in the config
+Turns out that PHP7 automatically loads any extensions that are installed so there is no need to
+enable them in the config using the nify ***/etc/php7/conf.d*** entries
 
 
