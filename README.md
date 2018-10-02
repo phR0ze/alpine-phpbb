@@ -1,7 +1,7 @@
 # alpine-php
 Docker container for a php deployment
 
-## Overview
+## Deployment
 Built off of Alpine Linux which is the defacto standard for production containers.
 
 ### Build
@@ -13,7 +13,11 @@ docker build -t alpine-php .
 
 ### Debug
 ```bash
-docker run --rm -p 80:80 alpine-php
+# Run your apache container in one terminal
+docker run --rm --name apache -e SERVER_NAME=localhost -p 80:80 alpine-php
+
+# Attach to your apache container in another terminal
+docker exec -it apache bash
 ```
 
 ### Run
@@ -23,12 +27,30 @@ docker run --rm -p 80:80 alpine-php
 docker run -d --name apache -p 80:80 -v /path/to/content:/www alpine-php
 ```
 
-## Packages
-* apache2
-* apache2-utils - ***Provides mpm_prefork***
-
 ## Configuration
-* httpd.conf
+
+### Packages
+* ***apache2*** - 
+* ***apache2-utils*** - 
+* ***ca-certificates*** - 
+* ***php7*** - 
+* ***php7-apache2*** - 
+* ***php7-ctype*** - 
+* ***php7-curl*** - 
+* ***php7-dom*** - 
+* ***php7-ftp*** - 
+* ***php7-gd*** - graphics support for phpBB
+* ***php7-iconv*** - 
+* ***php7-json*** - 
+* ***php7-opcache*** - 
+* ***php7-openssl*** - 
+* ***php7-sqlite3*** - sqlite3 database support for phpBB
+* ***php7-tokenizer*** - 
+* ***php7-xml*** - 
+* ***php7-zlib*** - 
+* ***php7-zip*** - 
+
+### /etc/apache2/httpd.conf
 
 ```bash
 # Convey the least amount of server information in responses
@@ -53,7 +75,10 @@ sed -i 's|^\(.*DirectoryIndex index.html\).*|\1 index.php|g' /etc/apache2/httpd.
 sed -i 's|/var/www/localhost/cgi-bin|/www/cgi-bin|g' /etc/apache2/httpd.conf
 ```
 
-### MPM Prefork
+#### PHP7 Modules
+The ***mod_php7*** modules is loaded by default no ***httpd.conf*** setting is required
+
+#### MPM Prefork Module
 https://httpd.apache.org/docs/2.4/mod/prefork.html
 
 Using the ***mpm_prefork_module*** implements a non-threaded, pre-forking web server. Each server
@@ -80,3 +105,8 @@ LoadModule mpm_prefork_module modules/mod_mpm_prefork.so
     MaxConnectionsPerChild 0
 </IfModule>
 ```
+
+### /etc/php7/php.ini
+Turns out that PHP7 automatically loads any extensions that are installed so there is no need to enable them in the config
+
+

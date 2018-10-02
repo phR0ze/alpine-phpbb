@@ -1,0 +1,7 @@
+#!/bin/bash
+set -e
+
+# Runtime configuration
+echo "ServerName $SERVER_NAME" > /etc/apache2/conf.d/httpd.conf
+
+exec httpd -D FOREGROUND
