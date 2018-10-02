@@ -63,10 +63,22 @@ sudo mv http-2018.10.2.tar.gz ~/Downloads/Backup
 ```
 
 ### Upgrade Minor Version e.g. 3.2.1 to 3.2.3 <a name="upgrade-minor-version"/></a>
-1. Download the latest Full Package of 3.2.x
-2. Navigate to https://www.phpbb.com/downloads/
-3. Click DOWNLOAD LATEST (.ZIP) button
-4. 
+1. Download the latest Full Package of 3.2.x  
+  ```bash
+  # Change directory to deployment
+  cd /srv
+
+  # see 'Backup Current Deployment' then move old content
+  sudo mv http http_old
+
+  # Navigate to https://www.phpbb.com/downloads/ and determine latest version
+  sudo wget https://www.phpbb.com/files/release/phpBB-3.2.3.zip
+
+  # Extract phpbb zip and rename
+  sudo unzip phpBB-3.2.3.zip
+  sudo mv phpBB3 http
+  ```
+2. 
 
 ## Configuration <a name="configuration"/></a>
 
