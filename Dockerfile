@@ -45,6 +45,8 @@ RUN echo ">> Install httpd/php" && \
     echo '    AddType application/x-httpd-php .php' >> conf && \
     echo '    AddType application/x-httpd-php-source .phps' >> conf && \
     sed -i '/AddType application\/x-gzip .gz .tgz/r conf' /etc/apache2/httpd.conf && rm conf && \
+    sed -i 's|^\(ErrorLog\).*|\1 /dev/stderr|g' /etc/apache2/httpd.conf && \
+    sed -i 's|\(.* CustomLog\).*|\1 /dev/stdout combined|g' /etc/apache2/httpd.conf && \
   \
   echo ">> Configuring /etc/php/php.ini" && \
     sed -i 's|^\(upload_max_filesize\).*|\1 = 200M|g' /etc/php7/php.ini && \
