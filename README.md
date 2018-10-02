@@ -1,33 +1,76 @@
 # alpine-phpbb
 Docker container for a phpbb deployment
 
-## Deployment
+### Table of Contents
+* [Deployment](#deployment)
+  * [Build and Stage](#build-and-stage)
+  * [Debug](#debug)
+  * [Run](#run)
+* [Upgrading phpBB](#upgrading-phpbb)
+  * [Backup Current Deployment](#backup-current-deployment)
+  * [Upgrade Minor Version](#upgrade-minor-version)
+* [Configuration](#configuration)
+  * [Packages](#packges)
+  * [/etc/apache2/httpd.conf](#etc-apache2-httpd-conf)
+    * [PHP7 Modules](#php7-modules)
+    * [MPM Prefork Module](#mpm-prefork-module)
+  * [/etc/php7/php.ini](#etc-php7-php-ini)
+
+## Deployment <a name="deployment"/></a>
 Built off of Alpine Linux which is the defacto standard for production containers.
 
-### Build
+### Build and Stage <a name="build-and-stage"/></a>
 ```bash
+# Build your image with the correct tag
 git clone https://github.com/phR0ze/alpine-phpbb
 cd alpine-phpbb
 docker build -t alpine-phpbb .
+
+# Login to docker hub if you haven't already
+docker login
+
+# Tag your docker image for release
+docker tag alpine-phpbb phr0ze/alpine-phpbb:latest
+docker push phr0ez/alpine-phpbb:latest
 ```
 
-### Debug
+### Debug <a name="debug"/></a>
 ```bash
 # Run your apache container in one terminal
-docker run --rm --name apache -e SERVER_NAME=localhost -p 80:80 alpine-phpbb
+docker run --rm --name phpbb -e SERVER_NAME=localhost -p 80:80 alpine-phpbb
 
 # Attach to your apache container in another terminal
-docker exec -it apache bash
+docker exec -it phpbb bash
 ```
 
-### Run
+### Run <a name="run"/></a>
 ```bash
-docker run -d --name apache -p 80:80 -v /path/to/content:/www alpine-phpbb
+docker run -d --name phpbb -p 80:80 -v /path/to/content:/www phr0ze/alpine-phpbb
 ```
 
-## Configuration
+## Upgrading phpBB <a name="upgrading-phpbb"/></a>
+Choose a location to store your phpbb deployment. I'll be using ***/srv*** for this example and
+running on ***cyberlinux*** so something are specific to that distro.
 
-### Packages
+### Backup Current Deploymet <a name="backup-current-deployment"/></a>
+```bash
+# Create a tarball of current deployment
+cd /srv
+sudo tar cvzf http-2018.10.2.tar.gz http
+
+# Backup tarball to a backup location
+sudo mv http-2018.10.2.tar.gz ~/Downloads/Backup
+```
+
+### Upgrade Minor Version e.g. 3.2.1 to 3.2.3 <a name="upgrade-minor-version"/></a>
+1. Download the latest Full Package of 3.2.x
+2. Navigate to https://www.phpbb.com/downloads/
+3. Click DOWNLOAD LATEST (.ZIP) button
+4. 
+
+## Configuration <a name="configuration"/></a>
+
+### Packages <a name="packages"/></a>
 * ***apache2*** - 
 * ***apache2-utils*** - 
 * ***ca-certificates*** - 
@@ -48,7 +91,7 @@ docker run -d --name apache -p 80:80 -v /path/to/content:/www alpine-phpbb
 * ***php7-zlib*** - 
 * ***php7-zip*** - 
 
-### /etc/apache2/httpd.conf
+### /etc/apache2/httpd.conf <a name="etc-apache2-httpd-conf"/></a>
 
 ```bash
 # Convey the least amount of server information in responses
@@ -73,10 +116,10 @@ sed -i 's|^\(.*DirectoryIndex index.html\).*|\1 index.php|g' /etc/apache2/httpd.
 sed -i 's|/var/www/localhost/cgi-bin|/www/cgi-bin|g' /etc/apache2/httpd.conf
 ```
 
-#### PHP7 Modules
+#### PHP7 Modules <a name="php7-modules"/></a>
 The ***mod_php7*** modules is loaded by default no ***httpd.conf*** setting is required
 
-#### MPM Prefork Module
+#### MPM Prefork Module <a name="mpm-prefork-module"/></a>
 https://httpd.apache.org/docs/2.4/mod/prefork.html
 
 Using the ***mpm_prefork_module*** implements a non-threaded, pre-forking web server. Each server
@@ -104,7 +147,7 @@ LoadModule mpm_prefork_module modules/mod_mpm_prefork.so
 </IfModule>
 ```
 
-### /etc/php7/php.ini
+### /etc/php7/php.ini <a name="etc-php7-php-ini"/></a>
 Turns out that PHP7 automatically loads any extensions that are installed so there is no need to
 enable them in the config using the nify ***/etc/php7/conf.d*** entries
 
