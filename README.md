@@ -1,20 +1,20 @@
-# alpine-php
-Docker container for a php deployment
+# alpine-phpbb
+Docker container for a phpbb deployment
 
 ## Deployment
 Built off of Alpine Linux which is the defacto standard for production containers.
 
 ### Build
 ```bash
-git clone https://github.com/phR0ze/alpine-php
-cd alpine-php
-docker build -t alpine-php .
+git clone https://github.com/phR0ze/alpine-phpbb
+cd alpine-phpbb
+docker build -t alpine-phpbb .
 ```
 
 ### Debug
 ```bash
 # Run your apache container in one terminal
-docker run --rm --name apache -e SERVER_NAME=localhost -p 80:80 alpine-php
+docker run --rm --name apache -e SERVER_NAME=localhost -p 80:80 alpine-phpbb
 
 # Attach to your apache container in another terminal
 docker exec -it apache bash
@@ -22,9 +22,7 @@ docker exec -it apache bash
 
 ### Run
 ```bash
-# --init runs a super light weight init inside the container that forwards signals and reaps
-# processes which protects you from zombies eating up all resources
-docker run -d --name apache -p 80:80 -v /path/to/content:/www alpine-php
+docker run -d --name apache -p 80:80 -v /path/to/content:/www alpine-phpbb
 ```
 
 ## Configuration
