@@ -40,8 +40,11 @@ RUN echo ">> Install httpd/php" && \
     sed -i 's|^\(ServerSignature\).*|\1 Off|g' /etc/apache2/httpd.conf && \
     sed -i 's|/var/www/localhost/htdocs|/www/html|g' /etc/apache2/httpd.conf && \
     sed -i 's|\(Options\) Indexes|\1|g' /etc/apache2/httpd.conf && \
-    sed -i 's|^\(.*DirectoryIndex index.html\).*|\1 index.php|g' /etc/apache2/httpd.conf && \
     sed -i 's|/var/www/localhost/cgi-bin|/www/cgi|g' /etc/apache2/httpd.conf && \
+    sed -i 's|^\(.*DirectoryIndex index.html\).*|\1 index.php|g' /etc/apache2/httpd.conf && \
+    echo '    AddType application/x-httpd-php .php' >> conf && \
+    echo '    AddType application/x-httpd-php-source .phps' >> conf && \
+    sed -i '/AddType application\/x-gzip .gz .tgz/r conf' /etc/apache2/httpd.conf && rm conf && \
   \
   echo ">> Configuring /etc/php/php.ini" && \
     sed -i 's|^\(upload_max_filesize\).*|\1 = 200M|g' /etc/php7/php.ini && \
