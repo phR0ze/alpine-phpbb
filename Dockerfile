@@ -46,6 +46,7 @@ RUN echo ">> Install httpd/php" && \
     sed -i 's|^\(ServerSignature\).*|\1 Off|g' /etc/apache2/httpd.conf && \
     sed -i "s|^\(User\) apache.*|\1 ${USERNAME}|g" /etc/apache2/httpd.conf && \
     sed -i "s|^\(Group\) apache.*|\1 ${USERNAME}|g" /etc/apache2/httpd.conf && \
+    sed -i 's|^#\(LoadModule rewrite_module.*\)|\1|g' /etc/apache2/httpd.conf && \
     sed -i "s|/var/www/localhost/htdocs|${SERVER_ROOT}/http|g" /etc/apache2/httpd.conf && \
     sed -i 's|\(Options\) Indexes|\1|g' /etc/apache2/httpd.conf && \
     sed -i "s|/var/www/localhost/cgi-bin|${SERVER_ROOT}/cgi|g" /etc/apache2/httpd.conf && \
