@@ -37,7 +37,7 @@ docker push phr0ez/alpine-phpbb:latest
 ### Debug <a name="debug"/></a>
 ```bash
 # Run your apache container in one terminal
-docker run --rm --name phpbb -e SERVER_NAME=localhost -p 80:80 alpine-phpbb
+docker run --rm --name phpbb -e SERVER_NAME=localhost -p 80:80 phr0ze/alpine-phpbb
 
 # Attach to your apache container in another terminal
 docker exec -it phpbb bash
@@ -63,22 +63,35 @@ sudo mv http-2018.10.2.tar.gz ~/Downloads/Backup
 ```
 
 ### Upgrade Minor Version e.g. 3.2.1 to 3.2.3 <a name="upgrade-minor-version"/></a>
-1. Download the latest Full Package of 3.2.x  
+1. Prepare Current Deployment  
+ a. [Backup Current Deployment](#backup-current-deployment)  
+ b. Navigate to the ***ACP >Board Settings*** and make sure ***prosilver*** is the theme  
+ c. Remove ***vendor*** and ***cache***  
+ ```bash
+ cd /srv
+ sudo rm -rf http/{vendor,cache}
+ ```
+2. Prepare latest phpBB for deployment
   ```bash
-  # Change directory to deployment
-  cd /srv
-
-  # see 'Backup Current Deployment' then move old content
-  sudo mv http http_old
-
   # Navigate to https://www.phpbb.com/downloads/ and determine latest version
   sudo wget https://www.phpbb.com/files/release/phpBB-3.2.3.zip
 
   # Extract phpbb zip and rename
   sudo unzip phpBB-3.2.3.zip
-  sudo mv phpBB3 http
+
+  # Remove new place holders and set ownership
+  sudo rm -rf phpBB3/config.php phpBB3/{images,files,store} phpBB3/ext/phpbb/viglink
+  sudo chown -R http: phpBB3
   ```
-2. 
+3. Deploy upgraded new bits
+  ```bash
+  # Copy phpBB3 contents to deployment location
+  sudo copy -r phpBB3/* http
+  ```
+4. Update the datbase
+  ```bash
+  docker run --rm --name phpbb -v /srv/http:/www/http phr0ze/alpine-phpbb bash
+  ```
 
 ## Configuration <a name="configuration"/></a>
 
