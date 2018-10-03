@@ -3,20 +3,91 @@ Docker container for a phpbb deployment
 
 ### Table of Contents
 * [Deployment](#deployment)
+  * [Run Current Deployment](#run-current-deployment)
+  * [Backup Current Deployment](#backup-current-deployment)
+  * [Restore Current Deployment](#backup-current-deployment)
+  * [Upgrade Minor Version](#upgrade-minor-version)
+* [Build](#build)
   * [Build and Stage](#build-and-stage)
   * [Debug](#debug)
-  * [Run](#run)
-* [Upgrading phpBB](#upgrading-phpbb)
-  * [Backup Current Deployment](#backup-current-deployment)
-  * [Upgrade Minor Version](#upgrade-minor-version)
 * [Configuration](#configuration)
   * [Packages](#packges)
   * [/etc/apache2/httpd.conf](#etc-apache2-httpd-conf)
-    * [PHP7 Modules](#php7-modules)
+    * [Rewrite Module](#rewrite-module)
+    * [PHP7 Module](#php7-module)
     * [MPM Prefork Module](#mpm-prefork-module)
   * [/etc/php7/php.ini](#etc-php7-php-ini)
 
 ## Deployment <a name="deployment"/></a>
+Choose a location to store your phpbb deployment. I'll be using ***/srv*** for this example and
+running on ***cyberlinux*** so something are specific to that distro.
+
+### Run Current Deployment <a name="run-current-deployment"/></a>
+```bash
+docker run -d --name phpbb -v /srv/http:/www/http -p 80:80 phr0ze/alpine-phpbb:alpine3.7-php7.1
+```
+
+### Backup Current Deploymet <a name="backup-current-deployment"/></a>
+```bash
+# Create a tarball of current deployment
+cd /srv
+sudo tar cvzf http-2018.10.2.tar.gz http
+
+# Backup tarball to a backup location
+sudo mv http-2018.10.2.tar.gz ~/Downloads/Backup
+```
+
+### Restore Current Deploymet <a name="restore-current-deployment"/></a>
+```bash
+# Copy the tarball from backup to target location
+cd /srv
+sudo rm -rf http
+sudo cp ~/Downloads/Backup/http-2018.10.2.tar.gz .
+sudo tar xvzf http-2018.10.2.tar.gz
+```
+
+### Upgrade Minor Version e.g. 3.2.1 to 3.2.2 <a name="upgrade-minor-version"/></a>
+1. Prepare Current Deployment  
+ a. [Backup Current Deployment](#backup-current-deployment)  
+ b. Navigate to the ***ACP >Board Settings*** and make sure ***prosilver*** is the theme  
+ c. Remove ***vendor*** and ***cache***  
+ ```bash
+ cd /srv
+ sudo rm -rf http/{vendor,cache}
+ ```
+2. Prepare latest phpBB for deployment
+  ```bash
+  # Navigate to https://www.phpbb.com/downloads/ and determine latest version
+  sudo wget https://www.phpbb.com/files/release/phpBB-3.2.2.zip
+
+  # Extract phpbb zip and rename
+  sudo unzip phpBB-3.2.2.zip
+
+  # Remove new place holders and set ownership
+  sudo rm -rf phpBB3/{config.php,images,files,store} phpBB3/ext/phpbb/viglink
+  sudo chown -R http: phpBB3
+
+  # Remove .htaccess if it only has db changes
+  diff http/.htaccess phpBB3/.htaccess
+  sudo rm phpBB3/.htaccess
+  ```
+3. Deploy upgraded new bits
+  ```bash
+  # Copy phpBB3 to current deployment
+  sudo cp -a phpBB3/* http
+  ```
+4. Ensure datbase is in ***.htaccess***  
+  a. Edit ***/srv/http/.htaccess***  
+  b. Ensure db is listed under the appropriate versions  
+5. Update the datbase
+  ```bash
+  docker run --rm --name phpbb -v /srv/http:/www/http phr0ze/alpine-phpbb bash
+  cd http
+  su -s /bin/bash -c 'php bin/phpbbcli.php db:migrate --safe-mode' http
+  ```
+
+
+## Build <a name="build"/></a>
 Built off of Alpine Linux which is the defacto standard for production containers.
 
 ### Build and Stage <a name="build-and-stage"/></a>
@@ -42,56 +113,6 @@ docker run --rm --name phpbb -e SERVER_NAME=localhost -p 80:80 phr0ze/alpine-php
 # Attach to your apache container in another terminal
 docker exec -it phpbb bash
 ```
-
-### Run <a name="run"/></a>
-```bash
-docker run -d --name phpbb -p 80:80 -v /path/to/content:/www phr0ze/alpine-phpbb
-```
-
-## Upgrading phpBB <a name="upgrading-phpbb"/></a>
-Choose a location to store your phpbb deployment. I'll be using ***/srv*** for this example and
-running on ***cyberlinux*** so something are specific to that distro.
-
-### Backup Current Deploymet <a name="backup-current-deployment"/></a>
-```bash
-# Create a tarball of current deployment
-cd /srv
-sudo tar cvzf http-2018.10.2.tar.gz http
-
-# Backup tarball to a backup location
-sudo mv http-2018.10.2.tar.gz ~/Downloads/Backup
-```
-
-### Upgrade Minor Version e.g. 3.2.1 to 3.2.3 <a name="upgrade-minor-version"/></a>
-1. Prepare Current Deployment  
- a. [Backup Current Deployment](#backup-current-deployment)  
- b. Navigate to the ***ACP >Board Settings*** and make sure ***prosilver*** is the theme  
- c. Remove ***vendor*** and ***cache***  
- ```bash
- cd /srv
- sudo rm -rf http/{vendor,cache}
- ```
-2. Prepare latest phpBB for deployment
-  ```bash
-  # Navigate to https://www.phpbb.com/downloads/ and determine latest version
-  sudo wget https://www.phpbb.com/files/release/phpBB-3.2.3.zip
-
-  # Extract phpbb zip and rename
-  sudo unzip phpBB-3.2.3.zip
-
-  # Remove new place holders and set ownership
-  sudo rm -rf phpBB3/config.php phpBB3/{images,files,store} phpBB3/ext/phpbb/viglink
-  sudo chown -R http: phpBB3
-  ```
-3. Deploy upgraded new bits
-  ```bash
-  # Copy phpBB3 contents to deployment location
-  sudo copy -r phpBB3/* http
-  ```
-4. Update the datbase
-  ```bash
-  docker run --rm --name phpbb -v /srv/http:/www/http phr0ze/alpine-phpbb bash
-  ```
 
 ## Configuration <a name="configuration"/></a>
 
@@ -141,8 +162,11 @@ sed -i 's|^\(.*DirectoryIndex index.html\).*|\1 index.php|g' /etc/apache2/httpd.
 sed -i 's|/var/www/localhost/cgi-bin|/www/cgi-bin|g' /etc/apache2/httpd.conf
 ```
 
-#### PHP7 Modules <a name="php7-modules"/></a>
-The ***mod_php7*** modules is loaded by default no ***httpd.conf*** setting is required
+#### Rewrite Module <a name="rewrite-module"/></a>
+
+
+#### PHP7 Module <a name="php7-module"/></a>
+The ***mod_php7*** module is loaded by default, no ***httpd.conf*** setting is required
 
 #### MPM Prefork Module <a name="mpm-prefork-module"/></a>
 https://httpd.apache.org/docs/2.4/mod/prefork.html

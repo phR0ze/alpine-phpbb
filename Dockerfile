@@ -1,4 +1,4 @@
-FROM phr0ze/alpine-base:3.8
+FROM phr0ze/alpine-base:3.7
 
 # Environment variables
 ENV USERID=33
