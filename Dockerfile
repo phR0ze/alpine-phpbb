@@ -1,4 +1,4 @@
-FROM phr0ze/alpine-base:3.7
+FROM phr0ze/alpine-base:3.8
 
 # Environment variables
 ENV USERID=33
@@ -12,6 +12,7 @@ RUN echo ">> Install httpd/php" && \
   apk add --no-cache \
     apache2 \
     apache2-utils \
+    sqlite-libs \
     ca-certificates \
     php7 \
     php7-apache2 \
