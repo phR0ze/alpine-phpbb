@@ -42,25 +42,46 @@ RUN echo ">> Install httpd/php" && \
     mkdir /run/apache2 && chown ${USERNAME}: /run/apache2 && \
   \
   echo ">> Configuring /etc/apache2/httpd.conf" && \
+    # Reduce the amount of server info sent in responses
     sed -i 's|^\(ServerTokens\).*|\1 Prod|g' /etc/apache2/httpd.conf && \
-    sed -i "s|^\(ServerRoot\).*|\1 ${SERVER_ROOT}|g" /etc/apache2/httpd.conf && \
     sed -i 's|^\(ServerSignature\).*|\1 Off|g' /etc/apache2/httpd.conf && \
+    \
+    # Confgure new apache user/group to match host to avoid file permission issues
     sed -i "s|^\(User\) apache.*|\1 ${USERNAME}|g" /etc/apache2/httpd.conf && \
     sed -i "s|^\(Group\) apache.*|\1 ${USERNAME}|g" /etc/apache2/httpd.conf && \
-    sed -i 's|^#\(LoadModule rewrite_module.*\)|\1|g' /etc/apache2/httpd.conf && \
+    \
+    # Set new server root and correct content paths
+    sed -i "s|^\(ServerRoot\).*|\1 ${SERVER_ROOT}|g" /etc/apache2/httpd.conf && \
     sed -i "s|/var/www/localhost/htdocs|${SERVER_ROOT}/http|g" /etc/apache2/httpd.conf && \
-    sed -i 's|\(Options\) Indexes|\1|g' /etc/apache2/httpd.conf && \
     sed -i "s|/var/www/localhost/cgi-bin|${SERVER_ROOT}/cgi|g" /etc/apache2/httpd.conf && \
+    \
+    # Load modules needed by phpBB that aren't standard
+    sed -i 's|^#\(LoadModule rewrite_module.*\)|\1|g' /etc/apache2/httpd.conf && \
+    \
+    # Remove the ability to view file indexes
+    sed -i 's|\(Options\) Indexes|\1|g' /etc/apache2/httpd.conf && \
+    \
+    # Must be set to allow .htaccess rules to protect phpBB content
+    # Note this also sets the ..cgi directive to All might need to revisit this
+    sed -i 's|^\(.*AllowOverride\) None|\1 All|g' /etc/apache2/httpd.conf && \
+    \
+    # Add httpd handlers for .php and .phps
     sed -i 's|^\(.*DirectoryIndex index.html\).*|\1 index.php|g' /etc/apache2/httpd.conf && \
     echo '    AddType application/x-httpd-php .php' >> conf && \
     echo '    AddType application/x-httpd-php-source .phps' >> conf && \
     sed -i '/AddType application\/x-gzip .gz .tgz/r conf' /etc/apache2/httpd.conf && rm conf && \
+    \
+    # Redirect logging to stderr and stdout for docker
     sed -i 's|^\(ErrorLog\).*|\1 /dev/stderr|g' /etc/apache2/httpd.conf && \
     sed -i 's|\(.* CustomLog\).*|\1 /dev/stdout combined|g' /etc/apache2/httpd.conf && \
   \
   echo ">> Configuring /etc/php/php.ini" && \
-    sed -i 's|^\(upload_max_filesize\).*|\1 = 200M|g' /etc/php7/php.ini && \
+    \
+    # Don't return php server information in responses
     sed -i 's|^\(expose_php\).*|\1 = Off|g' /etc/php7/php.ini && \
+    \
+    # Increase timeouts and max sizes to allow for larger uploads
+    sed -i 's|^\(upload_max_filesize\).*|\1 = 200M|g' /etc/php7/php.ini && \
     sed -i 's|^\(max_execution_time\).*|\1 = 6000|g' /etc/php7/php.ini && \
     sed -i 's|^\(max_input_time\).*|\1 = 6000|g' /etc/php7/php.ini && \
     sed -i 's|^\(post_max_size\).*|\1 = 210M|g' /etc/php7/php.ini

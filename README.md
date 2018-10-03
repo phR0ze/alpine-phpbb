@@ -7,6 +7,7 @@ Docker container for a phpbb deployment
   * [Backup Current Deployment](#backup-current-deployment)
   * [Restore Current Deployment](#backup-current-deployment)
   * [Upgrade Minor Version](#upgrade-minor-version)
+  * [Upgrade Major Version](#upgrade-major-version)
   * [Clean Install](#clean-install)
 * [Build](#build)
   * [Build and Stage](#build-and-stage)
@@ -45,12 +46,16 @@ cd /srv
 sudo rm -rf http
 sudo cp ~/Downloads/Backup/http-2018.10.2.tar.gz .
 sudo tar xvzf http-2018.10.2.tar.gz
+
+# Ensure database location is called out in 'config.php'
+# Note b/c the container location is /www not /srv as on host you need this
+# $dbhost = '/www/http/phpBB.db'
 ```
 
 ### Upgrade Minor Version e.g. 3.2.1 to 3.2.3 <a name="upgrade-minor-version"/></a>
 1. Prepare Current Deployment  
  a. [Backup Current Deployment](#backup-current-deployment)  
- b. Navigate to the ***ACP >Board Settings*** and make sure ***prosilver*** is the theme  
+ b. Navigate to the ***ACP >Board Settings*** and make sure ***prosilver*** as the theme  
  c. Remove ***vendor*** and ***cache***  
  ```bash
  cd /srv
@@ -82,6 +87,55 @@ sudo tar xvzf http-2018.10.2.tar.gz
 4. Ensure datbase is in ***.htaccess***  
   a. Edit ***/srv/http/.htaccess***  
   b. Ensure db is listed under the appropriate versions  
+5. Update the datbase
+  ```bash
+  docker run --rm -it --name phpbb -v /srv/http:/www/http phr0ze/alpine-phpbb bash
+  cd http
+  su -s /bin/bash -c 'php bin/phpbbcli.php db:migrate --safe-mode' http
+
+  # Now exit the previous container and start a new one
+  docker run --rm --name phpbb -v /srv/http:/www/http -p 80:80 phr0ze/alpine-phpbb
+  ```
+6. Update the rest of the site  
+  a. Navigate to ***http://example.com/install***  
+  b. Click the ***UPDATE*** tab  
+  c. Click the ***Update*** at the bottom  
+  d. Click ***Submit*** with ***Update database only*** selected  
+7. Delete install folder  
+  ```bash
+  sudo rm -rf /srv/http/install
+  ```
+
+### Upgrade Major Version e.g. 3.1 to 3.2 <a name="upgrade-major-version"/></a>
+1. [Backup Current Deployment](#backup-current-deployment)
+2. Prepare latest phpBB for deployment
+  ```bash
+  # Navigate to https://www.phpbb.com/downloads/ and determine latest version
+  sudo wget https://www.phpbb.com/files/release/phpBB-3.2.3.zip
+
+  # Extract phpbb zip and rename
+  sudo unzip phpBB-3.2.3.zip
+
+  # Remove place holders and set ownership
+  sudo rm -rf phpBB3/{config.php,images,files,store} phpBB3/ext/phpbb/viglink
+  sudo chown -R http: phpBB3
+
+  # Remove .htaccess if it only has db changes
+  diff http/.htaccess phpBB3/.htaccess
+  sudo rm phpBB3/.htaccess
+  ```
+3. Deploy upgraded new bits
+  ```bash
+  # Copy current deployment content to new phpBB deployment
+  sudo cp -a http/{config.php,.htaccess,phpBB.db,images,files,store} phpBB
+
+  # Stage phpBB as new deployment
+  sudo mv http http_old
+  sudo mv phpBB http
+  ```
+4. Ensure database is in ***.htaccess*** and ***config.php*** has correct db path  
+  a. Edit ***/srv/http/.htaccess*** as needed  
+  b. Edit ***/srv/http/config.php*** as needed  
 5. Update the datbase
   ```bash
   docker run --rm -it --name phpbb -v /srv/http:/www/http phr0ze/alpine-phpbb bash
@@ -185,6 +239,13 @@ https://www.phpbb.com/community/viewtopic.php?f=64&t=2131437
 The overwhelming majority at ***99.11%*** use ***MySql***
 
 ### Packages <a name="packages"/></a>
+
+#### Arch Linux
+```bash
+sudo pacman -S apache php php-apache php-sqlite php-gd
+```
+
+#### Alpine Linux
 * ***apache2*** - 
 * ***apache2-utils*** - 
 * ***ca-certificates*** - 
