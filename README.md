@@ -7,6 +7,7 @@ Docker container for a phpbb deployment
   * [Backup Current Deployment](#backup-current-deployment)
   * [Restore Current Deployment](#backup-current-deployment)
   * [Upgrade Minor Version](#upgrade-minor-version)
+  * [Clean Install](#clean-install)
 * [Build](#build)
   * [Build and Stage](#build-and-stage)
   * [Debug](#debug)
@@ -24,7 +25,7 @@ running on ***cyberlinux*** so something are specific to that distro.
 
 ### Run Current Deployment <a name="run-current-deployment"/></a>
 ```bash
-docker run -d --name phpbb -v /srv/http:/www/http -p 80:80 phr0ze/alpine-phpbb:alpine3.7-php7.1
+docker run -d --name phpbb -v /srv/http:/www/http -p 80:80 phr0ze/alpine-phpbb
 ```
 
 ### Backup Current Deploymet <a name="backup-current-deployment"/></a>
@@ -46,7 +47,7 @@ sudo cp ~/Downloads/Backup/http-2018.10.2.tar.gz .
 sudo tar xvzf http-2018.10.2.tar.gz
 ```
 
-### Upgrade Minor Version e.g. 3.2.1 to 3.2.2 <a name="upgrade-minor-version"/></a>
+### Upgrade Minor Version e.g. 3.2.1 to 3.2.3 <a name="upgrade-minor-version"/></a>
 1. Prepare Current Deployment  
  a. [Backup Current Deployment](#backup-current-deployment)  
  b. Navigate to the ***ACP >Board Settings*** and make sure ***prosilver*** is the theme  
@@ -58,10 +59,10 @@ sudo tar xvzf http-2018.10.2.tar.gz
 2. Prepare latest phpBB for deployment
   ```bash
   # Navigate to https://www.phpbb.com/downloads/ and determine latest version
-  sudo wget https://www.phpbb.com/files/release/phpBB-3.2.2.zip
+  sudo wget https://www.phpbb.com/files/release/phpBB-3.2.3.zip
 
   # Extract phpbb zip and rename
-  sudo unzip phpBB-3.2.2.zip
+  sudo unzip phpBB-3.2.3.zip
 
   # Remove new place holders and set ownership
   sudo rm -rf phpBB3/{config.php,images,files,store} phpBB3/ext/phpbb/viglink
@@ -75,16 +76,78 @@ sudo tar xvzf http-2018.10.2.tar.gz
   ```bash
   # Copy phpBB3 to current deployment
   sudo cp -a phpBB3/* http
+
+  # Note http/config.php must be in terms of the container path
   ```
 4. Ensure datbase is in ***.htaccess***  
   a. Edit ***/srv/http/.htaccess***  
   b. Ensure db is listed under the appropriate versions  
 5. Update the datbase
   ```bash
-  docker run --rm --name phpbb -v /srv/http:/www/http phr0ze/alpine-phpbb bash
+  docker run --rm -it --name phpbb -v /srv/http:/www/http phr0ze/alpine-phpbb bash
   cd http
   su -s /bin/bash -c 'php bin/phpbbcli.php db:migrate --safe-mode' http
+
+  # Now exit the previous container and start a new one
+  docker run --rm --name phpbb -v /srv/http:/www/http -p 80:80 phr0ze/alpine-phpbb
   ```
+6. Update the rest of the site  
+  a. Navigate to ***http://example.com/install***  
+  b. Click the ***UPDATE*** tab  
+  c. Click the ***Update*** at the bottom  
+  d. Click ***Submit*** with ***Update database only*** selected  
+7. Delete install folder  
+  ```bash
+  sudo rm -rf /srv/http/install
+  ```
+
+### Clean Install <a name="clean-install"/></a>
+1. Prepare latest phpBB for deployment
+  ```bash
+  # Prepare location for installed bits
+  cd /srv
+  sudo rm -rf http
+
+  # Navigate to https://www.phpbb.com/downloads/ and determine latest version
+  sudo wget https://www.phpbb.com/files/release/phpBB-3.2.3.zip
+
+  # Extract phpbb zip, set ownership and rename
+  sudo unzip phpBB-3.2.3.zip
+  sudo chown -R http: phpBB3
+  sudo mv phpBB3 http
+
+  # Remove cruft
+  sudo rm -rf http/ext/phpbb/viglink
+
+  # Create database file
+  sudo -u http touch http/phpBB.db
+  ```
+2. Launch phpBB for configuration
+  ```bash
+  docker run --rm --name phpbb -v /srv/http:/www/http -p 80:80 phr0ze/alpine-phpbb
+  ```
+3. Install phpBB  
+  a. Browse to ***http://example.com/install***  
+  b. Click the ***INSTALL*** tab  
+  c. Click ***Install*** button at bottom  
+  d. Enter admin creds  
+4. Configure database  
+  a. Set ***Database type*** to ***SQLite 3***  
+  b. Set ***Database server hostname or DSN*** to ***/www/http/phpBB.db***  
+  c. Leave ***Database server port***, ***Database username***, and ***Database password*** blank  
+  e. Set ***Database name*** to ***phpBB***  
+  f. Leave ***Prefix for tables in database*** as ***phpbb_***  
+  g. Click ***Submit***  
+5. Email configuration  
+  a. Set ***Enable board-wide emails*** to ***Disable***  
+  b. Click ***Submit***  
+6. Bulletin board configuration  
+  a. Set ***Default language*** to ***British English***  
+  b. Set ***Title of the board*** to ***Example Forum***  
+  d. Click ***Submit***  
+7. Final configuration  
+  a. Click ***Take me to the ACP***  
+  b. Now delete install directory, run: sudo rm -rf /srv/http/install  
 
 
 ## Build <a name="build"/></a>
@@ -115,6 +178,11 @@ docker exec -it phpbb bash
 ```
 
 ## Configuration <a name="configuration"/></a>
+
+### Database <a name="database"/></a>
+https://www.phpbb.com/community/viewtopic.php?f=64&t=2131437
+
+The overwhelming majority at ***99.11%*** use ***MySql***
 
 ### Packages <a name="packages"/></a>
 * ***apache2*** - 
@@ -199,5 +267,3 @@ LoadModule mpm_prefork_module modules/mod_mpm_prefork.so
 ### /etc/php7/php.ini <a name="etc-php7-php-ini"/></a>
 Turns out that PHP7 automatically loads any extensions that are installed so there is no need to
 enable them in the config using the nify ***/etc/php7/conf.d*** entries
-
-
