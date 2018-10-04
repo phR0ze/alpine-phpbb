@@ -201,7 +201,7 @@ sudo tar xvzf http-2018.10.2.tar.gz
   d. Click ***Submit***  
 7. Final configuration  
   a. Click ***Take me to the ACP***  
-  b. Now delete install directory, run: sudo rm -rf /srv/http/install  
+  b. Now delete install directory: `sudo rm -rf /srv/http/install`  
 
 
 ## Build <a name="build"/></a>
