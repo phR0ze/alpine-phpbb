@@ -13,6 +13,7 @@ Docker container for a phpbb deployment
   * [Build and Stage](#build-and-stage)
   * [Debug](#debug)
 * [Configuration](#configuration)
+  * [Docker](#docker)
   * [Packages](#packges)
   * [/etc/apache2/httpd.conf](#etc-apache2-httpd-conf)
     * [Rewrite Module](#rewrite-module)
@@ -25,8 +26,43 @@ Choose a location to store your phpbb deployment. I'll be using ***/srv*** for t
 running on ***cyberlinux*** so something are specific to that distro.
 
 ### Run Current Deployment <a name="run-current-deployment"/></a>
+Run docker container manually to test:
 ```bash
-docker run -d --name phpbb -v /srv/http:/www/http -p 80:80 phr0ze/alpine-phpbb
+docker run --name phpbb -v /srv/http:/www/http -p 80:80 phr0ze/alpine-phpbb
+```
+
+https://github.com/ibuildthecloud/systemd-docker  
+Create the `/etc/docker/daemon.json` file with the following contents
+```JSON
+{
+  "log-driver": "json-file",
+  "log-opts": {
+    "max-size": "10m",
+    "max-file": "3"
+  }
+}
+```
+
+Create the systemd unit
+```bash
+sudo tee -a /usr/lib/systemd/system/phpbb.service <<EOL
+[Unit]
+Description=phpBB
+After=docker.service
+Requires=docker.service
+
+[Service]
+ExecStart=/usr/bin/systemd-docker run --name phpbb -v /srv/http:/www/http -p 80:80 phr0ze/alpine-phpbb
+Restart=always
+RestartSec=10s
+Type=notify
+NotifyAccess=all
+TimeoutStartSec=10s
+TimeoutStopSec=10s
+
+[Install]
+WantedBy=multi-user.target
+EOL
 ```
 
 ### Backup Current Deploymet <a name="backup-current-deployment"/></a>
@@ -232,11 +268,6 @@ docker exec -it phpbb bash
 ```
 
 ## Configuration <a name="configuration"/></a>
-
-### Database <a name="database"/></a>
-https://www.phpbb.com/community/viewtopic.php?f=64&t=2131437
-
-The overwhelming majority at ***99.11%*** use ***MySql***
 
 ### Packages <a name="packages"/></a>
 
