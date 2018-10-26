@@ -23,7 +23,7 @@ Docker container for a phpbb deployment
 
 ## Deployment <a name="deployment"/></a>
 Choose a location to store your phpbb deployment. I'll be using ***/srv*** for this example and
-running on ***cyberlinux*** so something are specific to that distro.
+running on ***cyberlinux*** so some things are specific to that distro.
 
 ### Run Current Deployment <a name="run-current-deployment"/></a>
 Run docker container manually to test:
@@ -31,9 +31,9 @@ Run docker container manually to test:
 docker run --name phpbb -v /srv/http:/www/http -p 80:80 phr0ze/alpine-phpbb
 ```
 
-https://github.com/ibuildthecloud/systemd-docker  
-Create the `/etc/docker/daemon.json` file with the following contents
-```JSON
+Configure docker log mangment to avoid filling your disk:
+```bash
+sudo tee -a /etc/docker/daemon.json <<EOL
 {
   "log-driver": "json-file",
   "log-opts": {
@@ -41,6 +41,7 @@ Create the `/etc/docker/daemon.json` file with the following contents
     "max-file": "3"
   }
 }
+EOL
 ```
 
 Create the systemd unit
@@ -52,13 +53,13 @@ After=docker.service
 Requires=docker.service
 
 [Service]
-ExecStart=/usr/bin/systemd-docker run --name phpbb -v /srv/http:/www/http -p 80:80 phr0ze/alpine-phpbb
 Restart=always
-RestartSec=10s
-Type=notify
-NotifyAccess=all
-TimeoutStartSec=10s
-TimeoutStopSec=10s
+RestartSec=30s
+TimeoutStartSec=0
+TimeoutStopSec=0
+ExecStart=/usr/bin/docker run --name phpbb -v /srv/http:/www/http -p 80:80 phr0ze/alpine-phpbb
+ExecStop=/usr/bin/docker kill phpbb
+ExecStopPost=/usr/bin/docker rm -f phpbb
 
 [Install]
 WantedBy=multi-user.target
@@ -72,7 +73,7 @@ cd /srv
 sudo tar cvzf http-2018.10.2.tar.gz http
 
 # Backup tarball to a backup location
-sudo mv http-2018.10.2.tar.gz ~/Downloads/Backup
+scp http-2018.10.2.tar.gz 192.168.1.3:~/Downloads/Backup/phpBB
 ```
 
 ### Restore Current Deploymet <a name="restore-current-deployment"/></a>
@@ -137,9 +138,18 @@ sudo tar xvzf http-2018.10.2.tar.gz
   b. Click the ***UPDATE*** tab  
   c. Click the ***Update*** at the bottom  
   d. Click ***Submit*** with ***Update database only*** selected  
-7. Delete install folder  
+  e. One complete terminate the docker container
+7. Clean up
   ```bash
-  sudo rm -rf /srv/http/install
+  # Delete install folder
+  sudo rm -rf http/install
+
+  # Delete phpBB3 upgrade leftovers
+  sudo rm -rf phpBB3 phpBB-3.2.3.zip
+  ```
+8. Start the service
+  ```bash
+  sudo systenctl start phpbb
   ```
 
 ### Upgrade Major Version e.g. 3.1 to 3.2 <a name="upgrade-major-version"/></a>
